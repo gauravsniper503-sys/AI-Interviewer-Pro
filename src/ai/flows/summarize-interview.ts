@@ -13,6 +13,7 @@ import {z} from 'genkit';
 
 const SummarizeInterviewInputSchema = z.object({
   interviewType: z.string().describe('The type of interview conducted.'),
+  interviewLanguage: z.string().describe('The language for the interview (e.g., English, Hindi, Marathi).'),
   questionsAndAnswers: z
     .array(z.object({
       question: z.string().describe('The interview question.'),
@@ -39,9 +40,10 @@ const prompt = ai.definePrompt({
   name: 'summarizeInterviewPrompt',
   input: {schema: SummarizeInterviewInputSchema},
   output: {schema: SummarizeInterviewOutputSchema},
-  prompt: `You are an AI assistant that summarizes job interview conversations and returns a list of highlights from the interview.
+  prompt: `You are an AI assistant that summarizes job interview conversations and returns a list of highlights from the interview. The summary should be in {{interviewLanguage}}.
 
   Interview Type: {{interviewType}}
+  Interview Language: {{interviewLanguage}}
 
   Questions and Answers:
   {{#each questionsAndAnswers}}
@@ -49,7 +51,7 @@ const prompt = ai.definePrompt({
   Answer: {{this.answer}}
   {{/each}}
 
-  Please provide a list of key highlights that accurately summarizes the interview. Focus on the most important aspects of the candidate's responses and overall performance. Return the highlights as a bulleted list.
+  Please provide a list of key highlights that accurately summarizes the interview. Focus on the most important aspects of the candidate's responses and overall performance. Return the highlights as a bulleted list in {{interviewLanguage}}.
   `,
 });
 

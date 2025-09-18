@@ -15,6 +15,7 @@ const ProvideFeedbackInputSchema = z.object({
   question: z.string().describe('The question asked during the interview.'),
   userAnswer: z.string().describe("The user's answer to the question."),
   interviewType: z.string().describe('The type of interview being conducted, e.g., Software Engineer, Data Analyst.'),
+  interviewLanguage: z.string().describe('The language for the interview (e.g., English, Hindi, Marathi).'),
 });
 export type ProvideFeedbackInput = z.infer<typeof ProvideFeedbackInputSchema>;
 
@@ -31,12 +32,12 @@ const prompt = ai.definePrompt({
   name: 'provideFeedbackPrompt',
   input: {schema: ProvideFeedbackInputSchema},
   output: {schema: ProvideFeedbackOutputSchema},
-  prompt: `You are an AI Interviewer providing feedback on a candidate's answer during a {{interviewType}} interview.
+  prompt: `You are an AI Interviewer providing feedback on a candidate's answer during a {{interviewType}} interview conducted in {{interviewLanguage}}.
 
 Question: {{{question}}}
 User's Answer: {{{userAnswer}}}
 
-Provide clear, constructive, and professional feedback. Highlight what was good in the answer. Suggest how to improve it for real interviews. Include strengths, weaknesses, and concrete suggestions.
+Provide clear, constructive, and professional feedback in {{interviewLanguage}}. Highlight what was good in the answer. Suggest how to improve it for real interviews. Include strengths, weaknesses, and concrete suggestions.
 `,
 });
 

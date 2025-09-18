@@ -15,10 +15,12 @@ import {
 import type { InterviewResult, QuestionAndAnswer } from '@/lib/types';
 
 export async function generateQuestions(
-  interviewType: string
+  interviewType: string,
+  interviewLanguage: string
 ): Promise<string[]> {
   const input: GenerateAIInterviewQuestionsInput = {
     interviewType,
+    interviewLanguage,
     numberOfQuestions: 8,
   };
   const result = await generateAIInterviewQuestions(input);
@@ -27,11 +29,13 @@ export async function generateQuestions(
 
 export async function analyzeInterview(
   interviewType: string,
+  interviewLanguage: string,
   answers: QuestionAndAnswer[]
 ): Promise<{ results: InterviewResult[]; summary: string[] }> {
   const feedbackPromises = answers.map((qa) => {
     const feedbackInput: ProvideFeedbackInput = {
       interviewType,
+      interviewLanguage,
       question: qa.question,
       userAnswer: qa.answer,
     };
@@ -40,6 +44,7 @@ export async function analyzeInterview(
 
   const summaryInput: SummarizeInterviewInput = {
     interviewType,
+    interviewLanguage,
     questionsAndAnswers: answers,
   };
   const summaryPromise = summarizeInterview(summaryInput);

@@ -17,6 +17,13 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Form,
   FormControl,
   FormField,
@@ -27,13 +34,44 @@ import {
 
 const formSchema = z.object({
   interviewType: z.string().min(2, {
-    message: 'Please enter a valid role or topic.',
+    message: 'Please select or enter a valid role.',
   }),
+  customInterviewType: z.string().optional(),
+  interviewLanguage: z.string().min(2, {
+    message: 'Please select a language.',
+  }),
+}).refine(data => {
+    if (data.interviewType === 'other' && (!data.customInterviewType || data.customInterviewType.length < 2)) {
+      return false;
+    }
+    return true;
+}, {
+    message: "Please enter a custom interview type.",
+    path: ["customInterviewType"],
 });
 
+export type InterviewSettings = {
+  interviewType: string;
+  interviewLanguage: string;
+};
+
 interface InterviewSetupProps {
-  onStart: (interviewType: string) => void;
+  onStart: (settings: InterviewSettings) => void;
 }
+
+const interviewTypes = [
+    { value: 'software-engineer', label: 'Software Engineer' },
+    { value: 'data-analyst', label: 'Data Analyst' },
+    { value: 'product-manager', label: 'Product Manager' },
+    { value: 'ux-designer', label: 'UX Designer' },
+    { value: 'other', label: 'Other' },
+];
+
+const languages = [
+    { value: 'English', label: 'English' },
+    { value: 'Hindi', label: 'Hindi' },
+    { value: 'Marathi', label: 'Marathi' },
+];
 
 export function InterviewSetup({ onStart }: InterviewSetupProps) {
   const [isLoading, setIsLoading] = useState(false);
@@ -42,12 +80,23 @@ export function InterviewSetup({ onStart }: InterviewSetupProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       interviewType: '',
+      customInterviewType: '',
+      interviewLanguage: 'English',
     },
   });
 
+  const watchInterviewType = form.watch('interviewType');
+
   function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    onStart(values.interviewType);
+    const finalInterviewType = values.interviewType === 'other' 
+        ? values.customInterviewType! 
+        : interviewTypes.find(t => t.value === values.interviewType)?.label!;
+    
+    onStart({
+        interviewType: finalInterviewType,
+        interviewLanguage: values.interviewLanguage,
+    });
   }
 
   return (
@@ -62,20 +111,66 @@ export function InterviewSetup({ onStart }: InterviewSetupProps) {
               What kind of interview would you like to practice for?
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <FormField
               control={form.control}
               name="interviewType"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Interview Type</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="e.g., Software Engineer, Data Analyst, 10th Standard Student"
-                      {...field}
-                      disabled={isLoading}
-                    />
-                  </FormControl>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
+                        <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select an interview type" />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            {interviewTypes.map(type => (
+                                <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {watchInterviewType === 'other' && (
+                <FormField
+                control={form.control}
+                name="customInterviewType"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Custom Interview Type</FormLabel>
+                    <FormControl>
+                        <Input
+                        placeholder="e.g., 10th Standard Student"
+                        {...field}
+                        disabled={isLoading}
+                        />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+            )}
+            <FormField
+              control={form.control}
+              name="interviewLanguage"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Interview Language</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
+                        <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a language" />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            {languages.map(lang => (
+                                <SelectItem key={lang.value} value={lang.value}>{lang.label}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                   <FormMessage />
                 </FormItem>
               )}

@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 
 import { generateQuestions, analyzeInterview } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
-import { InterviewSetup } from '@/components/interview/interview-setup';
+import { InterviewSetup, type InterviewSettings } from '@/components/interview/interview-setup';
 import { InterviewSession } from '@/components/interview/interview-session';
 import { InterviewResults } from '@/components/interview/interview-results';
 import { LoadingSpinner } from '@/components/shared/loading-spinner';
@@ -17,6 +17,7 @@ type AppState = 'idle' | 'starting' | 'interviewing' | 'analyzing' | 'results';
 export default function Home() {
   const [appState, setAppState] = useState<AppState>('idle');
   const [interviewType, setInterviewType] = useState('');
+  const [interviewLanguage, setInterviewLanguage] = useState('');
   const [questions, setQuestions] = useState<string[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<QuestionAndAnswer[]>([]);
@@ -25,11 +26,15 @@ export default function Home() {
 
   const { toast } = useToast();
 
-  const handleStartInterview = async (type: string) => {
-    setInterviewType(type);
+  const handleStartInterview = async (settings: InterviewSettings) => {
+    setInterviewType(settings.interviewType);
+    setInterviewLanguage(settings.interviewLanguage);
     setAppState('starting');
     try {
-      const generatedQuestions = await generateQuestions(type);
+      const generatedQuestions = await generateQuestions(
+        settings.interviewType,
+        settings.interviewLanguage,
+      );
       if (generatedQuestions && generatedQuestions.length > 0) {
         setQuestions(generatedQuestions);
         setAppState('interviewing');
@@ -69,6 +74,7 @@ export default function Home() {
     try {
       const analysis = await analyzeInterview(
         interviewType,
+        interviewLanguage,
         finalAnswers
       );
       if (analysis && analysis.results) {
@@ -94,6 +100,7 @@ export default function Home() {
   const handleRestart = () => {
     setAppState('idle');
     setInterviewType('');
+    setInterviewLanguage('');
     setQuestions([]);
     setCurrentQuestionIndex(0);
     setAnswers([]);
