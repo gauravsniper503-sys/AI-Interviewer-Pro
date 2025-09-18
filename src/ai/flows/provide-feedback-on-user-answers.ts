@@ -46,6 +46,9 @@ const provideFeedbackFlow = ai.defineFlow(
     name: 'provideFeedbackFlow',
     inputSchema: ProvideFeedbackInputSchema,
     outputSchema: ProvideFeedbackOutputSchema,
+    config: {
+      retries: 3,
+    },
   },
   async input => {
     const {output} = await prompt(input);

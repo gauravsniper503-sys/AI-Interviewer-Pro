@@ -47,6 +47,9 @@ const generateAIInterviewQuestionsFlow = ai.defineFlow(
     name: 'generateAIInterviewQuestionsFlow',
     inputSchema: GenerateAIInterviewQuestionsInputSchema,
     outputSchema: GenerateAIInterviewQuestionsOutputSchema,
+    config: {
+      retries: 3,
+    },
   },
   async input => {
     const {output} = await prompt(input);

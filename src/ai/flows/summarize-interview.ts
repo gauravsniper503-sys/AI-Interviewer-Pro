@@ -60,6 +60,9 @@ const summarizeInterviewFlow = ai.defineFlow(
     name: 'summarizeInterviewFlow',
     inputSchema: SummarizeInterviewInputSchema,
     outputSchema: SummarizeInterviewOutputSchema,
+    config: {
+      retries: 3,
+    },
   },
   async input => {
     const {output} = await prompt(input);
