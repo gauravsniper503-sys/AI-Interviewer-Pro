@@ -16,7 +16,7 @@ const SummarizeInterviewInputSchema = z.object({
   questionsAndAnswers: z
     .array(z.object({
       question: z.string().describe('The interview question.'),
-      answer: z.string().describe('The user\'s answer to the question.'),
+      answer: z.string().describe("The user's answer to the question."),
     }))
     .describe('An array of questions and answers from the interview.'),
 });

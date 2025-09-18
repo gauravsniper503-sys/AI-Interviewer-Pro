@@ -13,13 +13,13 @@ import {z} from 'genkit';
 
 const ProvideFeedbackInputSchema = z.object({
   question: z.string().describe('The question asked during the interview.'),
-  userAnswer: z.string().describe('The user\'s answer to the question.'),
+  userAnswer: z.string().describe("The user's answer to the question."),
   interviewType: z.string().describe('The type of interview being conducted, e.g., Software Engineer, Data Analyst.'),
 });
 export type ProvideFeedbackInput = z.infer<typeof ProvideFeedbackInputSchema>;
 
 const ProvideFeedbackOutputSchema = z.object({
-  feedback: z.string().describe('Constructive feedback on the user\'s answer, including strengths, weaknesses, and suggestions for improvement.'),
+  feedback: z.string().describe("Constructive feedback on the user's answer, including strengths, weaknesses, and suggestions for improvement."),
 });
 export type ProvideFeedbackOutput = z.infer<typeof ProvideFeedbackOutputSchema>;
 
