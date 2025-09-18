@@ -49,18 +49,16 @@ export default function Home() {
   };
 
   const handleSubmitAnswer = (answer: string) => {
-    setAnswers((prev) => [
-      ...prev,
+    const newAnswers: QuestionAndAnswer[] = [
+      ...answers,
       { question: questions[currentQuestionIndex], answer },
-    ]);
+    ];
+    setAnswers(newAnswers);
 
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex((prev) => prev + 1);
     } else {
-      handleFinishInterview([
-        ...answers,
-        { question: questions[currentQuestionIndex], answer },
-      ]);
+      handleFinishInterview(newAnswers);
     }
   };
 
