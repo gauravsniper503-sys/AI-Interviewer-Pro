@@ -1,6 +1,6 @@
 'use client';
 
-import { RefreshCw } from 'lucide-react';
+import { Award, RefreshCw } from 'lucide-react';
 import {
   Accordion,
   AccordionContent,
@@ -19,12 +19,14 @@ import type { InterviewResult } from '@/lib/types';
 
 interface InterviewResultsProps {
   results: InterviewResult[];
+  summary: string[];
   onRestart: () => void;
   interviewType: string;
 }
 
 export function InterviewResults({
   results,
+  summary,
   onRestart,
   interviewType,
 }: InterviewResultsProps) {
@@ -36,6 +38,26 @@ export function InterviewResults({
           Here is the feedback for your {interviewType} interview.
         </p>
       </div>
+
+      {summary && summary.length > 0 && (
+        <Card className="shadow-lg border-primary/20 bg-primary/5">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <Award className="w-6 h-6 text-primary" />
+              <CardTitle className="font-headline">
+                Overall Performance Summary
+              </CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2 list-disc pl-5 text-foreground/90">
+              {summary.map((highlight, index) => (
+                <li key={index}>{highlight}</li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="shadow-lg border-primary/20">
         <CardHeader>

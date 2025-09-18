@@ -21,6 +21,7 @@ export default function Home() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<QuestionAndAnswer[]>([]);
   const [results, setResults] = useState<InterviewResult[]>([]);
+  const [summary, setSummary] = useState<string[]>([]);
 
   const { toast } = useToast();
 
@@ -68,12 +69,13 @@ export default function Home() {
   ) => {
     setAppState('analyzing');
     try {
-      const analysisResults = await analyzeInterview(
+      const analysis = await analyzeInterview(
         interviewType,
         finalAnswers
       );
-      if (analysisResults) {
-        setResults(analysisResults);
+      if (analysis && analysis.results) {
+        setResults(analysis.results);
+        setSummary(analysis.summary);
         setAppState('results');
       } else {
         throw new Error('Failed to analyze interview.');
@@ -86,6 +88,7 @@ export default function Home() {
         description:
           'Could not analyze the interview results. Please try again later.',
       });
+      // Go back to the last question screen on error
       setAppState('interviewing');
     }
   };
@@ -97,6 +100,7 @@ export default function Home() {
     setCurrentQuestionIndex(0);
     setAnswers([]);
     setResults([]);
+    setSummary([]);
   };
 
   const renderContent = () => {
@@ -147,6 +151,7 @@ export default function Home() {
           >
             <InterviewResults
               results={results}
+              summary={summary}
               onRestart={handleRestart}
               interviewType={interviewType}
             />

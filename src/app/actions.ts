@@ -8,6 +8,10 @@ import {
   provideFeedback,
   type ProvideFeedbackInput,
 } from '@/ai/flows/provide-feedback-on-user-answers';
+import {
+  summarizeInterview,
+  type SummarizeInterviewInput,
+} from '@/ai/flows/summarize-interview';
 import type { InterviewResult, QuestionAndAnswer } from '@/lib/types';
 
 export async function generateQuestions(
@@ -24,7 +28,7 @@ export async function generateQuestions(
 export async function analyzeInterview(
   interviewType: string,
   answers: QuestionAndAnswer[]
-): Promise<InterviewResult[]> {
+): Promise<{ results: InterviewResult[]; summary: string[] }> {
   const feedbackPromises = answers.map((qa) => {
     const feedbackInput: ProvideFeedbackInput = {
       interviewType,
@@ -34,12 +38,21 @@ export async function analyzeInterview(
     return provideFeedback(feedbackInput);
   });
 
-  const feedbackResults = await Promise.all(feedbackPromises);
+  const summaryInput: SummarizeInterviewInput = {
+    interviewType,
+    questionsAndAnswers: answers,
+  };
+  const summaryPromise = summarizeInterview(summaryInput);
+
+  const [feedbackResults, summaryResult] = await Promise.all([
+    Promise.all(feedbackPromises),
+    summaryPromise,
+  ]);
 
   const results: InterviewResult[] = answers.map((qa, index) => ({
     ...qa,
     feedback: feedbackResults[index].feedback,
   }));
 
-  return results;
+  return { results, summary: summaryResult.highlights };
 }
