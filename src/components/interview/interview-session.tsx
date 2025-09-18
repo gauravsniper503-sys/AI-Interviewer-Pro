@@ -63,6 +63,7 @@ export function InterviewSession({
 
   useEffect(() => {
     form.reset();
+    setIsLoading(false);
   }, [question, form]);
 
   function handleFormSubmit(values: z.infer<typeof formSchema>) {
