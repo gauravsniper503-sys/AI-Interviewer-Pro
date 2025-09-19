@@ -1,27 +1,25 @@
 import admin from 'firebase-admin';
 
+// This guard prevents re-initializing the app in hot-reload environments.
 if (!admin.apps.length) {
-    // Check if the GOOGLE_APPLICATION_CREDENTIALS environment variable is set.
-    // This is useful for local development. In a deployed environment,
-    // Application Default Credentials should be automatically discovered.
+  try {
+    // When deployed to a Google Cloud environment, the GOOGLE_APPLICATION_CREDENTIALS
+    // environment variable is automatically set.
+    // The `initializeApp` function without arguments will use these credentials.
     if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-        try {
-            const serviceAccount = JSON.parse(
-              require('fs').readFileSync(process.env.GOOGLE_APPLICATION_CREDENTIALS, 'utf8')
-            );
-            admin.initializeApp({
-                credential: admin.credential.cert(serviceAccount),
-            });
-          } catch(e) {
-            console.log("Could not parse GOOGLE_APPLICATION_CREDENTIALS, trying default initialization", e);
-            admin.initializeApp();
-          }
+       admin.initializeApp({
+         credential: admin.credential.applicationDefault(),
+       });
     } else {
-        // For environments like Cloud Run, initialize without explicit credentials.
-        admin.initializeApp();
+       // For local development, you might not have this env var set.
+       // In that case, `initializeApp` will look for credentials in default locations.
+       // As a fallback, it might connect to the emulator if FIREBASE_AUTH_EMULATOR_HOST is set.
+       admin.initializeApp();
     }
+  } catch (e) {
+    console.error('Firebase admin initialization error', e);
+  }
 }
-
 
 export const db = admin.firestore();
 export const authAdmin = admin.auth();
