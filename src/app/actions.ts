@@ -28,7 +28,7 @@ export async function generateQuestions(
 }
 
 export async function analyzeAndSaveInterview(
-  userId: string,
+  userId: string, // This is now a placeholder ('anonymous')
   interviewType: string,
   interviewLanguage: string,
   answers: QuestionAndAnswer[]
@@ -60,22 +60,12 @@ export async function analyzeAndSaveInterview(
     feedback: feedbackResults[index].feedback,
   }));
   
-  // Temporarily disable saving to database to fix login issues
-  // const interviewData: Omit<Interview, 'id'> = {
-  //   userId,
-  //   interviewType,
-  //   interviewLanguage,
-  //   createdAt: new Date(),
-  //   results,
-  //   summary: summaryResult.highlights,
-  // };
-
-  // await db.collection('users').doc(userId).collection('interviews').add(interviewData);
-
+  // Database saving is disabled.
+  
   return { results, summary: summaryResult.highlights };
 }
 
 export async function getInterviewHistory(userId: string): Promise<Interview[]> {
-    // Temporarily return empty array to fix login issues
+    // History is disabled.
     return [];
 }

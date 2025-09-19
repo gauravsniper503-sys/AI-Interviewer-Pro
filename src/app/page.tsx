@@ -1,20 +1,15 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { Bot, History, LogOut, Sparkles } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { Bot, Sparkles } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { signOut } from 'firebase/auth';
 
 import { analyzeAndSaveInterview, generateQuestions } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/use-auth';
-import { auth } from '@/lib/firebase';
 import { InterviewSetup, type InterviewSettings } from '@/components/interview/interview-setup';
 import { InterviewSession } from '@/components/interview/interview-session';
 import { InterviewResults } from '@/components/interview/interview-results';
 import { LoadingSpinner } from '@/components/shared/loading-spinner';
-import { Button } from '@/components/ui/button';
 import type { InterviewResult, QuestionAndAnswer } from '@/lib/types';
 
 type AppState = 'idle' | 'starting' | 'interviewing' | 'analyzing' | 'results';
@@ -30,14 +25,6 @@ export default function Home() {
   const [summary, setSummary] = useState<string[]>([]);
 
   const { toast } = useToast();
-  const { user, loading } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
-    }
-  }, [user, loading, router]);
 
   const handleStartInterview = async (settings: InterviewSettings) => {
     setInterviewType(settings.interviewType);
@@ -69,11 +56,10 @@ export default function Home() {
   const handleFinishInterview = useCallback(async (
     finalAnswers: QuestionAndAnswer[]
   ) => {
-    if (!user) return;
     setAppState('analyzing');
     try {
       const analysis = await analyzeAndSaveInterview(
-        user.uid,
+        'anonymous', // Using a placeholder user ID
         interviewType,
         interviewLanguage,
         finalAnswers
@@ -95,7 +81,7 @@ export default function Home() {
       });
       setAppState('interviewing');
     }
-  }, [user, interviewType, interviewLanguage]);
+  }, [interviewType, interviewLanguage]);
 
 
   const handleSubmitAnswer = useCallback((answer: string) => {
@@ -121,19 +107,6 @@ export default function Home() {
     setResults([]);
     setSummary([]);
   };
-  
-  const handleSignOut = async () => {
-    await signOut(auth);
-    router.push('/login');
-  };
-
-  if (loading || !user) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <Sparkles className="h-10 w-10 animate-spin text-primary" />
-      </div>
-    );
-  }
 
   const renderContent = () => {
     switch (appState) {
@@ -171,7 +144,7 @@ export default function Home() {
           </motion.div>
         );
       case 'analyzing':
-        return <LoadingSpinner text="Analyzing your performance and saving results..." />;
+        return <LoadingSpinner text="Analyzing your performance..." />;
       case 'results':
         return (
           <motion.div
@@ -196,16 +169,6 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen w-full flex-col items-center p-4 sm:p-6 md:p-8">
-      <header className="absolute top-4 right-4 flex items-center gap-2">
-        <Button variant="outline" size="sm" onClick={() => router.push('/history')}>
-            <History className="mr-2" />
-            Interview History
-        </Button>
-        <Button variant="outline" size="sm" onClick={handleSignOut}>
-            <LogOut className="mr-2" />
-            Sign Out
-        </Button>
-      </header>
       <div className="flex flex-col items-center text-center my-8">
         <div className="flex items-center gap-3">
           <Sparkles className="w-8 h-8 text-primary" />
@@ -214,7 +177,7 @@ export default function Home() {
           </h1>
         </div>
         <p className="mt-2 text-lg text-foreground/80 max-w-2xl">
-          Welcome, {user.displayName}! Let's ace your next interview.
+          Your personal AI-powered coach to help you ace your next interview.
         </p>
       </div>
       <div className="w-full max-w-3xl flex justify-center">
