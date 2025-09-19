@@ -1,4 +1,3 @@
-import type { Timestamp } from 'firebase-admin/firestore';
 
 export type QuestionAndAnswer = {
   question: string;
@@ -16,7 +15,7 @@ export type Interview = {
   userId: string;
   interviewType: string;
   interviewLanguage: string;
-  createdAt: Timestamp;
+  createdAt: unknown; // Using unknown for Firestore Timestamp
   results: InterviewResult[];
   summary: string[];
 };

@@ -1,11 +1,11 @@
+
 'use client';
 
 import { useState, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
-import { analyzeAndSaveInterview, generateQuestions } from '@/app/actions';
+import { analyzeInterview, generateQuestions } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/use-auth';
 import { InterviewSetup, type InterviewSettings } from '@/components/interview/interview-setup';
 import { InterviewSession } from '@/components/interview/interview-session';
 import { InterviewResults } from '@/components/interview/interview-results';
@@ -15,7 +15,6 @@ import type { InterviewResult, QuestionAndAnswer } from '@/lib/types';
 type AppState = 'idle' | 'starting' | 'interviewing' | 'analyzing' | 'results';
 
 export default function Home() {
-  const { user } = useAuth();
   const [appState, setAppState] = useState<AppState>('idle');
   const [interviewType, setInterviewType] = useState('');
   const [interviewLanguage, setInterviewLanguage] = useState('');
@@ -57,15 +56,9 @@ export default function Home() {
   const handleFinishInterview = useCallback(async (
     finalAnswers: QuestionAndAnswer[]
   ) => {
-    if (!user) {
-        toast({variant: 'destructive', title: 'Error', description: 'You must be logged in to save results.'});
-        setAppState('interviewing');
-        return;
-    }
     setAppState('analyzing');
     try {
-      const analysis = await analyzeAndSaveInterview(
-        user.uid,
+      const analysis = await analyzeInterview(
         interviewType,
         interviewLanguage,
         finalAnswers
@@ -87,7 +80,7 @@ export default function Home() {
       });
       setAppState('interviewing');
     }
-  }, [interviewType, interviewLanguage, user, toast]);
+  }, [interviewType, interviewLanguage, toast]);
 
 
   const handleSubmitAnswer = useCallback((answer: string) => {

@@ -1,6 +1,6 @@
+
 'use server';
 
-import { FieldValue } from 'firebase-admin/firestore';
 import {
   generateAIInterviewQuestions,
   type GenerateAIInterviewQuestionsInput,
@@ -13,8 +13,7 @@ import {
   summarizeInterview,
   type SummarizeInterviewInput,
 } from '@/ai/flows/summarize-interview';
-import { dbAdmin } from '@/lib/firebase-admin';
-import type { Interview, InterviewResult, QuestionAndAnswer } from '@/lib/types';
+import type { InterviewResult, QuestionAndAnswer } from '@/lib/types';
 
 export async function generateQuestions(
   interviewType: string,
@@ -29,8 +28,7 @@ export async function generateQuestions(
   return result.questions;
 }
 
-export async function analyzeAndSaveInterview(
-  userId: string,
+export async function analyzeInterview(
   interviewType: string,
   interviewLanguage: string,
   answers: QuestionAndAnswer[]
@@ -62,51 +60,5 @@ export async function analyzeAndSaveInterview(
     feedback: feedbackResults[index].feedback,
   }));
   
-  const interviewData: Omit<Interview, 'id'> = {
-    userId,
-    interviewType,
-    interviewLanguage,
-    createdAt: FieldValue.serverTimestamp(),
-    results,
-    summary: summaryResult.highlights,
-  };
-
-  try {
-    await dbAdmin.collection('interviews').add(interviewData);
-  } catch (error) {
-    console.error("Error saving interview to Firestore: ", error);
-    // We don't want to block the user if the save fails,
-    // so we'll just log the error and continue.
-  }
-  
   return { results, summary: summaryResult.highlights };
-}
-
-export async function getInterviewHistory(userId: string): Promise<Interview[]> {
-  try {
-    const snapshot = await dbAdmin
-      .collection('interviews')
-      .where('userId', '==', userId)
-      .orderBy('createdAt', 'desc')
-      .get();
-      
-    if (snapshot.empty) {
-      return [];
-    }
-
-    const interviews: Interview[] = snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-            id: doc.id,
-            ...data,
-             // Make sure createdAt is a serializable format if needed, but Firestore SDK handles it.
-             createdAt: data.createdAt,
-        } as Interview
-    });
-
-    return interviews;
-  } catch (error) {
-    console.error("Error fetching interview history: ", error);
-    return [];
-  }
 }
