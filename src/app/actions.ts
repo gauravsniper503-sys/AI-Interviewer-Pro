@@ -13,8 +13,6 @@ import {
   type SummarizeInterviewInput,
 } from '@/ai/flows/summarize-interview';
 import type { InterviewResult, QuestionAndAnswer, Interview } from '@/lib/types';
-import { db } from '@/lib/firebase-admin';
-import { Timestamp } from 'firebase-admin/firestore';
 
 export async function generateQuestions(
   interviewType: string,
@@ -61,41 +59,23 @@ export async function analyzeAndSaveInterview(
     ...qa,
     feedback: feedbackResults[index].feedback,
   }));
+  
+  // Temporarily disable saving to database to fix login issues
+  // const interviewData: Omit<Interview, 'id'> = {
+  //   userId,
+  //   interviewType,
+  //   interviewLanguage,
+  //   createdAt: new Date(),
+  //   results,
+  //   summary: summaryResult.highlights,
+  // };
 
-  const interviewData: Omit<Interview, 'id'> = {
-    userId,
-    interviewType,
-    interviewLanguage,
-    createdAt: Timestamp.now(),
-    results,
-    summary: summaryResult.highlights,
-  };
-
-  await db.collection('users').doc(userId).collection('interviews').add(interviewData);
+  // await db.collection('users').doc(userId).collection('interviews').add(interviewData);
 
   return { results, summary: summaryResult.highlights };
 }
 
 export async function getInterviewHistory(userId: string): Promise<Interview[]> {
-    const snapshot = await db.collection('users').doc(userId).collection('interviews').orderBy('createdAt', 'desc').get();
-    if (snapshot.empty) {
-        return [];
-    }
-    const interviews = snapshot.docs.map(doc => {
-      const data = doc.data();
-      const plainData = Object.fromEntries(
-        Object.entries(data).map(([key, value]) => {
-          if (value instanceof Timestamp) {
-            return [key, value.toDate().toISOString()];
-          }
-          return [key, value];
-        })
-      );
-      return { 
-        id: doc.id, 
-        ...plainData,
-      }
-    }) as Interview[];
-
-    return interviews;
+    // Temporarily return empty array to fix login issues
+    return [];
 }

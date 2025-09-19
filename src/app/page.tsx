@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Bot, History, LogOut, Sparkles } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { signOut } from 'firebase/auth';
 
-import { generateQuestions, analyzeAndSaveInterview } from '@/app/actions';
+import { analyzeAndSaveInterview, generateQuestions } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { auth } from '@/lib/firebase';
@@ -66,21 +66,7 @@ export default function Home() {
     }
   };
 
-  const handleSubmitAnswer = (answer: string) => {
-    const newAnswers: QuestionAndAnswer[] = [
-      ...answers,
-      { question: questions[currentQuestionIndex], answer },
-    ];
-    setAnswers(newAnswers);
-
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex((prev) => prev + 1);
-    } else {
-      handleFinishInterview(newAnswers);
-    }
-  };
-
-  const handleFinishInterview = async (
+  const handleFinishInterview = useCallback(async (
     finalAnswers: QuestionAndAnswer[]
   ) => {
     if (!user) return;
@@ -109,7 +95,23 @@ export default function Home() {
       });
       setAppState('interviewing');
     }
-  };
+  }, [user, interviewType, interviewLanguage]);
+
+
+  const handleSubmitAnswer = useCallback((answer: string) => {
+    const newAnswers: QuestionAndAnswer[] = [
+      ...answers,
+      { question: questions[currentQuestionIndex], answer },
+    ];
+    setAnswers(newAnswers);
+
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex((prev) => prev + 1);
+    } else {
+      handleFinishInterview(newAnswers);
+    }
+  }, [answers, currentQuestionIndex, questions, handleFinishInterview]);
+
 
   const handleRestart = () => {
     setAppState('idle');
