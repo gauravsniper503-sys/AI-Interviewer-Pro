@@ -34,9 +34,14 @@ export function SplashScreen() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.5 }}
         >
+          <div className="flex flex-col">
             <span className="text-4xl font-bold font-headline text-foreground">
-            AI Interviewer
+              AI Interviewer
             </span>
+            <span className="text-xs text-right font-headline text-foreground/50 -mt-1">
+              Made by Gaurav
+            </span>
+          </div>
         </motion.div>
       </div>
     </motion.div>
