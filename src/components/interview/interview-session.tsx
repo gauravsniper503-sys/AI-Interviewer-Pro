@@ -26,7 +26,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
@@ -53,6 +53,7 @@ export function InterviewSession({
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
+  const [hasMicPermission, setHasMicPermission] = useState<boolean | null>(null);
   const [isSpeechRecognitionSupported, setIsSpeechRecognitionSupported] =
     useState(false);
   const recognitionRef = useRef<any>(null);
@@ -66,25 +67,45 @@ export function InterviewSession({
   });
 
   useEffect(() => {
-    // This check needs to be inside useEffect to ensure `window` is available.
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
+    const checkSupportAndPermissions = async () => {
+      const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+
+      if (!SpeechRecognition) {
+        setIsSpeechRecognitionSupported(false);
+        setHasMicPermission(false);
+        return;
+      }
       setIsSpeechRecognitionSupported(true);
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        // We can immediately stop the stream; we only needed to get permission.
+        stream.getTracks().forEach(track => track.stop());
+        setHasMicPermission(true);
+      } catch (error) {
+        console.error('Microphone access denied:', error);
+        setHasMicPermission(false);
+        return; // Stop if we don't have permission
+      }
+
       const recognition = new SpeechRecognition();
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang = 'en-US'; 
+      recognition.lang = 'en-US';
 
       recognition.onresult = (event) => {
+        let interimTranscript = '';
         let finalTranscript = '';
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {
             finalTranscript += event.results[i][0].transcript;
+          } else {
+            interimTranscript += event.results[i][0].transcript;
           }
         }
         if (finalTranscript) {
-           form.setValue('answer', form.getValues('answer') + finalTranscript + ' ');
+           form.setValue('answer', form.getValues('answer') + finalTranscript.trim() + ' ');
         }
       };
 
@@ -102,8 +123,11 @@ export function InterviewSession({
       };
       
       recognitionRef.current = recognition;
-    }
+    };
+    
+    checkSupportAndPermissions();
   }, [form, toast]);
+
 
   useEffect(() => {
     setProgress(((questionNumber - 1) / totalQuestions) * 100);
@@ -114,12 +138,18 @@ export function InterviewSession({
     setIsLoading(false);
     if(isRecording) {
       recognitionRef.current?.stop();
-      setIsRecording(false);
     }
-  }, [question, form]);
+  }, [question, form, isRecording]);
 
   const toggleRecording = () => {
-    if (!recognitionRef.current) return;
+    if (!recognitionRef.current || !hasMicPermission) {
+       toast({
+          variant: 'destructive',
+          title: 'Cannot Start Recording',
+          description: 'Microphone access is not enabled. Please allow access in your browser settings.',
+        });
+      return;
+    }
 
     if (isRecording) {
       recognitionRef.current.stop();
@@ -132,7 +162,7 @@ export function InterviewSession({
         toast({
           variant: 'destructive',
           title: 'Could Not Start Recording',
-          description: 'Please ensure microphone permissions are enabled and try again.',
+          description: 'There was an issue starting the speech recognition service.',
         });
         setIsRecording(false);
       }
@@ -150,6 +180,30 @@ export function InterviewSession({
   }
 
   const isLastQuestion = questionNumber === totalQuestions;
+
+  const renderPermissionStatus = () => {
+    if (hasMicPermission === false) {
+       if (!isSpeechRecognitionSupported) {
+         return (
+            <Alert variant="destructive">
+                <AlertTitle>Feature Not Supported</AlertTitle>
+                <AlertDescription>
+                Speech recognition is not supported in this browser. Please use a modern browser like Chrome.
+                </AlertDescription>
+            </Alert>
+          );
+       }
+       return (
+          <Alert variant="destructive">
+              <AlertTitle>Microphone Access Required</AlertTitle>
+              <AlertDescription>
+                Please enable microphone permissions in your browser settings to use the speech-to-text feature.
+              </AlertDescription>
+          </Alert>
+       )
+    }
+    return null;
+  }
 
   return (
     <Card className="w-full shadow-lg border-primary/20">
@@ -198,7 +252,8 @@ export function InterviewSession({
                                         variant={isRecording ? 'destructive' : 'ghost'}
                                         className="absolute right-2 top-2"
                                         onClick={toggleRecording}
-                                        disabled={isLoading}
+                                        disabled={isLoading || !hasMicPermission}
+                                        aria-label={isRecording ? 'Stop recording' : 'Record answer'}
                                     >
                                         {isRecording ? <MicOff /> : <Mic />}
                                         <span className="sr-only">
@@ -212,14 +267,7 @@ export function InterviewSession({
                             </FormItem>
                         )}
                         />
-                         {!isSpeechRecognitionSupported && (
-                            <Alert variant="destructive">
-                                <AlertDescription>
-                                Speech recognition is not supported in this browser. Please
-                                use a modern browser like Chrome for this feature.
-                                </AlertDescription>
-                            </Alert>
-                        )}
+                         {renderPermissionStatus()}
                     </CardContent>
                     <CardFooter>
                         <Button type="submit" disabled={isLoading} className="w-full">
