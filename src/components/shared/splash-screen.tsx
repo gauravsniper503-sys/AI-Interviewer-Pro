@@ -10,7 +10,7 @@ export function SplashScreen() {
       initial={{ opacity: 1 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.5, delay: 0.2 }}
+      transition={{ duration: 0.5, delay: 2.0 }}
       className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background"
     >
       <motion.div
@@ -24,7 +24,16 @@ export function SplashScreen() {
         }}
         className="flex items-center space-x-4"
       >
-        <Sparkles className="h-16 w-16 text-primary" />
+        <motion.div
+            animate={{ rotate: 360 }}
+            transition={{
+                repeat: Infinity,
+                ease: "linear",
+                duration: 2
+            }}
+        >
+            <Sparkles className="h-16 w-16 text-primary" />
+        </motion.div>
         <span className="text-4xl font-bold font-headline text-foreground">
           AI Interviewer
         </span>
