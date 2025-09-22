@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import { analyzeInterview, generateQuestions } from '@/app/actions';
@@ -12,6 +12,7 @@ import { InterviewResults } from '@/components/interview/interview-results';
 import { LoadingSpinner } from '@/components/shared/loading-spinner';
 import type { InterviewResult, QuestionAndAnswer } from '@/lib/types';
 import { Header } from '@/components/shared/header';
+import { SplashScreen } from '@/components/shared/splash-screen';
 
 type AppState = 'idle' | 'starting' | 'interviewing' | 'analyzing' | 'results';
 
@@ -24,8 +25,16 @@ export default function Home() {
   const [answers, setAnswers] = useState<QuestionAndAnswer[]>([]);
   const [results, setResults] = useState<InterviewResult[]>([]);
   const [summary, setSummary] = useState<string[]>([]);
+  const [showSplash, setShowSplash] = useState(true);
 
   const { toast } = useToast();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleStartInterview = async (settings: InterviewSettings) => {
     setInterviewType(settings.interviewType);
@@ -170,6 +179,10 @@ export default function Home() {
 
   return (
     <>
+      <AnimatePresence>
+        {showSplash && <SplashScreen />}
+      </AnimatePresence>
+
       <Header />
       <main className="flex flex-col items-center p-4 sm:p-6 md:p-8">
         <div className="w-full max-w-3xl flex justify-center mt-12">
