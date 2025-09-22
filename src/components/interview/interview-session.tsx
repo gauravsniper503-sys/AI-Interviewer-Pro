@@ -1,10 +1,11 @@
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { ArrowRight, Mic } from 'lucide-react';
+import { ArrowRight, Mic, MicOff } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const formSchema = z.object({
   answer: z.string().min(10, {
@@ -49,10 +51,10 @@ export function InterviewSession({
 }: InterviewSessionProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
-
-  useEffect(() => {
-    setProgress(((questionNumber - 1) / totalQuestions) * 100);
-  }, [questionNumber, totalQuestions]);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isSpeechRecognitionSupported, setIsSpeechRecognitionSupported] =
+    useState(false);
+  const recognitionRef = useRef<any>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -62,12 +64,67 @@ export function InterviewSession({
   });
 
   useEffect(() => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      setIsSpeechRecognitionSupported(true);
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onresult = (event) => {
+        let interimTranscript = '';
+        let finalTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          } else {
+            interimTranscript += event.results[i][0].transcript;
+          }
+        }
+        const currentAnswer = form.getValues('answer');
+        form.setValue('answer', currentAnswer + finalTranscript);
+      };
+
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error', event.error);
+        setIsRecording(false);
+      };
+
+      recognition.onend = () => {
+        setIsRecording(false);
+      };
+      
+      recognitionRef.current = recognition;
+    }
+  }, [form]);
+
+  useEffect(() => {
+    setProgress(((questionNumber - 1) / totalQuestions) * 100);
+  }, [questionNumber, totalQuestions]);
+
+  useEffect(() => {
     form.reset();
     setIsLoading(false);
   }, [question, form]);
 
+  const toggleRecording = () => {
+    if (isRecording) {
+      recognitionRef.current?.stop();
+    } else {
+      recognitionRef.current?.start();
+    }
+    setIsRecording(!isRecording);
+  };
+
+
   function handleFormSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
+    if (isRecording) {
+      recognitionRef.current?.stop();
+      setIsRecording(false);
+    }
     onSubmit(values.answer);
   }
 
@@ -106,17 +163,42 @@ export function InterviewSession({
                         render={({ field }) => (
                             <FormItem>
                             <FormControl>
-                                <Textarea
-                                placeholder="Type your answer here..."
-                                className="min-h-[150px] resize-none"
-                                {...field}
-                                disabled={isLoading}
-                                />
+                                <div className="relative">
+                                    <Textarea
+                                    placeholder="Type or speak your answer here..."
+                                    className="min-h-[150px] resize-none pr-12"
+                                    {...field}
+                                    disabled={isLoading}
+                                    />
+                                    {isSpeechRecognitionSupported && (
+                                    <Button
+                                        type="button"
+                                        size="icon"
+                                        variant={isRecording ? 'destructive' : 'ghost'}
+                                        className="absolute right-2 top-2"
+                                        onClick={toggleRecording}
+                                        disabled={isLoading}
+                                    >
+                                        {isRecording ? <MicOff /> : <Mic />}
+                                        <span className="sr-only">
+                                        {isRecording ? 'Stop recording' : 'Record answer'}
+                                        </span>
+                                    </Button>
+                                    )}
+                                </div>
                             </FormControl>
                             <FormMessage />
                             </FormItem>
                         )}
                         />
+                         {!isSpeechRecognitionSupported && (
+                            <Alert variant="destructive">
+                                <AlertDescription>
+                                Speech recognition is not supported in your browser. Please
+                                use a modern browser like Chrome for this feature.
+                                </AlertDescription>
+                            </Alert>
+                        )}
                     </CardContent>
                     <CardFooter>
                         <Button type="submit" disabled={isLoading} className="w-full">
