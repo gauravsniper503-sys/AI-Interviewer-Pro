@@ -1,11 +1,11 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { ArrowRight, Mic, MicOff } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import { Button } from '@/components/ui/button';
@@ -26,8 +26,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Progress } from '@/components/ui/progress';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
   answer: z.string().min(10, {
@@ -52,12 +50,6 @@ export function InterviewSession({
 }: InterviewSessionProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [isRecording, setIsRecording] = useState(false);
-  const [hasMicPermission, setHasMicPermission] = useState<boolean | null>(null);
-  const [isSpeechRecognitionSupported, setIsSpeechRecognitionSupported] =
-    useState(false);
-  const recognitionRef = useRef<any>(null);
-  const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -67,157 +59,20 @@ export function InterviewSession({
   });
 
   useEffect(() => {
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-      setIsSpeechRecognitionSupported(false);
-      setHasMicPermission(false);
-      return;
-    }
-    setIsSpeechRecognitionSupported(true);
-
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = 'en-US';
-
-    recognition.onresult = (event) => {
-      let finalTranscript = '';
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript;
-        }
-      }
-      if (finalTranscript) {
-        form.setValue('answer', form.getValues('answer') + finalTranscript.trim() + ' ');
-      }
-    };
-
-    recognition.onerror = (event) => {
-      toast({
-        variant: 'destructive',
-        title: 'Speech Recognition Error',
-        description: `An error occurred: ${event.error}. This might be due to your browser or network environment. Please try again.`,
-      });
-      setIsRecording(false);
-    };
-
-    recognition.onend = () => {
-      setIsRecording(false);
-    };
-    
-    recognitionRef.current = recognition;
-
-    // Check for microphone permission on mount
-    navigator.mediaDevices.getUserMedia({ audio: true })
-      .then(stream => {
-        stream.getTracks().forEach(track => track.stop());
-        setHasMicPermission(true);
-      })
-      .catch(err => {
-        console.error('Microphone access denied:', err);
-        setHasMicPermission(false);
-      });
-
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-    };
-  }, [form, toast]);
-
-
-  useEffect(() => {
     setProgress(((questionNumber - 1) / totalQuestions) * 100);
   }, [questionNumber, totalQuestions]);
 
   useEffect(() => {
     form.reset({ answer: '' });
     setIsLoading(false);
-    if(isRecording && recognitionRef.current) {
-      recognitionRef.current.stop();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [question, form]);
-
-  const toggleRecording = async () => {
-     if (!isSpeechRecognitionSupported) {
-        toast({
-          variant: 'destructive',
-          title: 'Feature Not Supported',
-          description: 'Speech recognition is not supported in this browser. Please use a modern browser like Chrome.',
-        });
-        return;
-    }
-
-    if (hasMicPermission === false) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach(track => track.stop());
-        setHasMicPermission(true);
-      } catch (error) {
-        toast({
-          variant: 'destructive',
-          title: 'Microphone Required',
-          description: 'Microphone access was denied. Please enable it in your browser settings to use this feature.',
-        });
-        return;
-      }
-    }
-
-    if (isRecording) {
-      recognitionRef.current?.stop();
-      setIsRecording(false);
-    } else {
-      try {
-        recognitionRef.current?.start();
-        setIsRecording(true);
-      } catch (error) {
-        toast({
-          variant: 'destructive',
-          title: 'Could Not Start Recording',
-          description: 'There was an issue starting the speech recognition service. Please try again.',
-        });
-        setIsRecording(false);
-      }
-    }
-  };
-
 
   function handleFormSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    if (isRecording) {
-      recognitionRef.current?.stop();
-    }
     onSubmit(values.answer);
   }
 
   const isLastQuestion = questionNumber === totalQuestions;
-
-  const renderPermissionStatus = () => {
-    if (!isSpeechRecognitionSupported) {
-      return (
-        <Alert variant="destructive">
-            <AlertTitle>Feature Not Supported</AlertTitle>
-            <AlertDescription>
-            Speech recognition is not supported in this browser. Please use a modern browser like Chrome.
-            </AlertDescription>
-        </Alert>
-      );
-    }
-    if (hasMicPermission === false) {
-       return (
-          <Alert variant="destructive">
-              <AlertTitle>Microphone Access Required</AlertTitle>
-              <AlertDescription>
-                To use the speech-to-text feature, please enable microphone permissions in your browser settings and refresh the page.
-              </AlertDescription>
-          </Alert>
-       )
-    }
-    return null;
-  }
 
   return (
     <Card className="w-full shadow-lg border-primary/20">
@@ -252,34 +107,17 @@ export function InterviewSession({
                         render={({ field }) => (
                             <FormItem>
                             <FormControl>
-                                <div className="relative">
-                                    <Textarea
-                                    placeholder="Type or speak your answer here..."
-                                    className="min-h-[150px] resize-none pr-12"
-                                    {...field}
-                                    disabled={isLoading}
-                                    />
-                                    <Button
-                                        type="button"
-                                        size="icon"
-                                        variant={isRecording ? 'destructive' : 'ghost'}
-                                        className="absolute right-2 top-2"
-                                        onClick={toggleRecording}
-                                        disabled={isLoading || hasMicPermission === false}
-                                        aria-label={isRecording ? 'Stop recording' : 'Record answer'}
-                                    >
-                                        {isRecording ? <MicOff /> : <Mic />}
-                                        <span className="sr-only">
-                                        {isRecording ? 'Stop recording' : 'Record answer'}
-                                        </span>
-                                    </Button>
-                                </div>
+                                <Textarea
+                                placeholder="Type your answer here..."
+                                className="min-h-[150px] resize-none"
+                                {...field}
+                                disabled={isLoading}
+                                />
                             </FormControl>
                             <FormMessage />
                             </FormItem>
                         )}
                         />
-                         {renderPermissionStatus()}
                     </CardContent>
                     <CardFooter>
                         <Button type="submit" disabled={isLoading} className="w-full">
