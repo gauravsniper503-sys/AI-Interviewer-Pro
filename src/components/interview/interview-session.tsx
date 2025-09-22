@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/form';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
   answer: z.string().min(10, {
@@ -55,6 +56,7 @@ export function InterviewSession({
   const [isSpeechRecognitionSupported, setIsSpeechRecognitionSupported] =
     useState(false);
   const recognitionRef = useRef<any>(null);
+  const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -89,6 +91,11 @@ export function InterviewSession({
 
       recognition.onerror = (event) => {
         console.error('Speech recognition error', event.error);
+        toast({
+          variant: 'destructive',
+          title: 'Speech Recognition Error',
+          description: `An error occurred: ${event.error}. Please try again.`,
+        });
         setIsRecording(false);
       };
 
@@ -98,7 +105,7 @@ export function InterviewSession({
       
       recognitionRef.current = recognition;
     }
-  }, [form]);
+  }, [form, toast]);
 
   useEffect(() => {
     setProgress(((questionNumber - 1) / totalQuestions) * 100);
@@ -113,9 +120,19 @@ export function InterviewSession({
     if (isRecording) {
       recognitionRef.current?.stop();
     } else {
-      recognitionRef.current?.start();
+      try {
+        recognitionRef.current?.start();
+        setIsRecording(true);
+      } catch (error) {
+        console.error('Could not start recording', error);
+        toast({
+          variant: 'destructive',
+          title: 'Could Not Start Recording',
+          description: 'Please ensure your microphone is enabled and try again.',
+        });
+        setIsRecording(false);
+      }
     }
-    setIsRecording(!isRecording);
   };
 
 
