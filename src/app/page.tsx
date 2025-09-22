@@ -35,6 +35,7 @@ export default function Home() {
       const generatedQuestions = await generateQuestions(
         settings.interviewType,
         settings.interviewLanguage,
+        settings.numberOfQuestions
       );
       if (generatedQuestions && generatedQuestions.length > 0) {
         setQuestions(generatedQuestions);

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -40,6 +41,9 @@ const formSchema = z.object({
   interviewLanguage: z.string().min(2, {
     message: 'Please select a language.',
   }),
+  numberOfQuestions: z.string().min(1, {
+    message: 'Please select the number of questions.',
+  }),
 }).refine(data => {
     if (data.interviewType === 'other' && (!data.customInterviewType || data.customInterviewType.length < 2)) {
       return false;
@@ -53,6 +57,7 @@ const formSchema = z.object({
 export type InterviewSettings = {
   interviewType: string;
   interviewLanguage: string;
+  numberOfQuestions: number;
 };
 
 interface InterviewSetupProps {
@@ -73,6 +78,8 @@ const languages = [
     { value: 'Marathi', label: 'Marathi' },
 ];
 
+const questionCounts = Array.from({ length: 6 }, (_, i) => i + 5); // 5 to 10
+
 export function InterviewSetup({ onStart }: InterviewSetupProps) {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -82,6 +89,7 @@ export function InterviewSetup({ onStart }: InterviewSetupProps) {
       interviewType: '',
       customInterviewType: '',
       interviewLanguage: 'English',
+      numberOfQuestions: '8',
     },
   });
 
@@ -96,6 +104,7 @@ export function InterviewSetup({ onStart }: InterviewSetupProps) {
     onStart({
         interviewType: finalInterviewType,
         interviewLanguage: values.interviewLanguage,
+        numberOfQuestions: parseInt(values.numberOfQuestions, 10),
     });
   }
 
@@ -168,6 +177,28 @@ export function InterviewSetup({ onStart }: InterviewSetupProps) {
                         <SelectContent>
                             {languages.map(lang => (
                                 <SelectItem key={lang.value} value={lang.value}>{lang.label}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="numberOfQuestions"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Number of Questions</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
+                        <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select the number of questions" />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            {questionCounts.map(count => (
+                                <SelectItem key={count} value={String(count)}>{count}</SelectItem>
                             ))}
                         </SelectContent>
                     </Select>

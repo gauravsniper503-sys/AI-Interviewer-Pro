@@ -17,12 +17,13 @@ import type { InterviewResult, QuestionAndAnswer } from '@/lib/types';
 
 export async function generateQuestions(
   interviewType: string,
-  interviewLanguage: string
+  interviewLanguage: string,
+  numberOfQuestions: number,
 ): Promise<string[]> {
   const input: GenerateAIInterviewQuestionsInput = {
     interviewType,
     interviewLanguage,
-    numberOfQuestions: 8,
+    numberOfQuestions,
   };
   const result = await generateAIInterviewQuestions(input);
   return result.questions;
