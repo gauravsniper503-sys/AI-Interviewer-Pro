@@ -153,4 +153,3 @@ export function InterviewSession({
     </Card>
   );
 }
-
