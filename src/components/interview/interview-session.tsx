@@ -90,22 +90,25 @@ export function InterviewSession({
       };
 
       recognition.onerror = (event) => {
-        console.error('Speech recognition error', event.error);
         toast({
           variant: 'destructive',
           title: 'Speech Recognition Error',
           description: `An error occurred: ${event.error}. Please try again.`,
         });
-        setIsRecording(false);
+        if (isRecording) {
+          setIsRecording(false);
+        }
       };
 
       recognition.onend = () => {
-        setIsRecording(false);
+        if (isRecording) {
+            setIsRecording(false);
+        }
       };
       
       recognitionRef.current = recognition;
     }
-  }, [form, toast]);
+  }, [form, toast, isRecording]);
 
   useEffect(() => {
     setProgress(((questionNumber - 1) / totalQuestions) * 100);
@@ -119,12 +122,12 @@ export function InterviewSession({
   const toggleRecording = () => {
     if (isRecording) {
       recognitionRef.current?.stop();
+      setIsRecording(false);
     } else {
       try {
         recognitionRef.current?.start();
         setIsRecording(true);
       } catch (error) {
-        console.error('Could not start recording', error);
         toast({
           variant: 'destructive',
           title: 'Could Not Start Recording',
