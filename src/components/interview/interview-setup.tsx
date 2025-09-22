@@ -44,6 +44,7 @@ const formSchema = z.object({
   numberOfQuestions: z.string().min(1, {
     message: 'Please select the number of questions.',
   }),
+  customNumberOfQuestions: z.string().optional(),
 }).refine(data => {
     if (data.interviewType === 'other' && (!data.customInterviewType || data.customInterviewType.length < 2)) {
       return false;
@@ -52,6 +53,16 @@ const formSchema = z.object({
 }, {
     message: "Please enter a custom interview type.",
     path: ["customInterviewType"],
+}).refine(data => {
+    if (data.numberOfQuestions === 'custom') {
+        if (!data.customNumberOfQuestions) return false;
+        const num = parseInt(data.customNumberOfQuestions, 10);
+        return !isNaN(num) && num > 0 && num <= 50;
+    }
+    return true;
+}, {
+    message: "Please enter a number between 1 and 50.",
+    path: ["customNumberOfQuestions"],
 });
 
 export type InterviewSettings = {
@@ -78,7 +89,11 @@ const languages = [
     { value: 'Marathi', label: 'Marathi' },
 ];
 
-const questionCounts = Array.from({ length: 6 }, (_, i) => i + 5); // 5 to 10
+const questionCounts = [
+    { value: '5', label: '5' },
+    { value: '10', label: '10' },
+    { value: 'custom', label: 'Custom' },
+];
 
 export function InterviewSetup({ onStart }: InterviewSetupProps) {
   const [isLoading, setIsLoading] = useState(false);
@@ -89,11 +104,13 @@ export function InterviewSetup({ onStart }: InterviewSetupProps) {
       interviewType: '',
       customInterviewType: '',
       interviewLanguage: 'English',
-      numberOfQuestions: '8',
+      numberOfQuestions: '5',
+      customNumberOfQuestions: '',
     },
   });
 
   const watchInterviewType = form.watch('interviewType');
+  const watchNumberOfQuestions = form.watch('numberOfQuestions');
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
@@ -101,10 +118,14 @@ export function InterviewSetup({ onStart }: InterviewSetupProps) {
         ? values.customInterviewType! 
         : interviewTypes.find(t => t.value === values.interviewType)?.label!;
     
+    const finalNumberOfQuestions = values.numberOfQuestions === 'custom'
+        ? parseInt(values.customNumberOfQuestions!, 10)
+        : parseInt(values.numberOfQuestions, 10);
+
     onStart({
         interviewType: finalInterviewType,
         interviewLanguage: values.interviewLanguage,
-        numberOfQuestions: parseInt(values.numberOfQuestions, 10),
+        numberOfQuestions: finalNumberOfQuestions,
     });
   }
 
@@ -198,7 +219,7 @@ export function InterviewSetup({ onStart }: InterviewSetupProps) {
                         </FormControl>
                         <SelectContent>
                             {questionCounts.map(count => (
-                                <SelectItem key={count} value={String(count)}>{count}</SelectItem>
+                                <SelectItem key={count.value} value={String(count.value)}>{count.label}</SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
@@ -206,6 +227,28 @@ export function InterviewSetup({ onStart }: InterviewSetupProps) {
                 </FormItem>
               )}
             />
+            {watchNumberOfQuestions === 'custom' && (
+                <FormField
+                control={form.control}
+                name="customNumberOfQuestions"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Custom Number of Questions</FormLabel>
+                    <FormControl>
+                        <Input
+                        type="number"
+                        placeholder="Enter a number up to 50"
+                        {...field}
+                        disabled={isLoading}
+                        min="1"
+                        max="50"
+                        />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+            )}
           </CardContent>
           <CardFooter>
             <Button type="submit" disabled={isLoading} className="w-full">
