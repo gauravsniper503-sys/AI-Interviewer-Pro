@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/form';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const formSchema = z.object({
   answer: z.string().min(10, {
@@ -51,6 +52,7 @@ export function InterviewSession({
 }: InterviewSessionProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const isMobile = useIsMobile();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -74,6 +76,10 @@ export function InterviewSession({
   }
 
   const isLastQuestion = questionNumber === totalQuestions;
+  
+  const proTip = isMobile
+    ? "Use the microphone icon on your keyboard to speak your answer."
+    : "Use your keyboard's dictation feature (e.g., Windows Key + H) to speak your answer.";
 
   return (
     <Card className="w-full shadow-lg border-primary/20">
@@ -106,7 +112,7 @@ export function InterviewSession({
                         <Alert className="text-sm text-muted-foreground">
                             <Mic className="h-4 w-4" />
                             <AlertDescription>
-                                Pro Tip: Use your keyboard&apos;s dictation feature (e.g., Windows Key + H) to speak your answer.
+                                Pro Tip: {proTip}
                             </AlertDescription>
                         </Alert>
 
@@ -147,3 +153,4 @@ export function InterviewSession({
     </Card>
   );
 }
+
