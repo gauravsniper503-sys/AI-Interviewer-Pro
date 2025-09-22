@@ -66,6 +66,7 @@ export function InterviewSession({
   });
 
   useEffect(() => {
+    // This check needs to be inside useEffect to ensure `window` is available.
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
@@ -73,20 +74,18 @@ export function InterviewSession({
       const recognition = new SpeechRecognition();
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang = 'en-US';
+      recognition.lang = 'en-US'; 
 
       recognition.onresult = (event) => {
-        let interimTranscript = '';
         let finalTranscript = '';
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {
             finalTranscript += event.results[i][0].transcript;
-          } else {
-            interimTranscript += event.results[i][0].transcript;
           }
         }
-        const currentAnswer = form.getValues('answer');
-        form.setValue('answer', currentAnswer + finalTranscript);
+        if (finalTranscript) {
+           form.setValue('answer', form.getValues('answer') + finalTranscript + ' ');
+        }
       };
 
       recognition.onerror = (event) => {
@@ -95,43 +94,45 @@ export function InterviewSession({
           title: 'Speech Recognition Error',
           description: `An error occurred: ${event.error}. Please try again.`,
         });
-        if (isRecording) {
-          setIsRecording(false);
-        }
+        setIsRecording(false);
       };
 
       recognition.onend = () => {
-        if (isRecording) {
-            setIsRecording(false);
-        }
+        setIsRecording(false);
       };
       
       recognitionRef.current = recognition;
     }
-  }, [form, toast, isRecording]);
+  }, [form, toast]);
 
   useEffect(() => {
     setProgress(((questionNumber - 1) / totalQuestions) * 100);
   }, [questionNumber, totalQuestions]);
 
   useEffect(() => {
-    form.reset();
+    form.reset({ answer: '' });
     setIsLoading(false);
+    if(isRecording) {
+      recognitionRef.current?.stop();
+      setIsRecording(false);
+    }
   }, [question, form]);
 
   const toggleRecording = () => {
+    if (!recognitionRef.current) return;
+
     if (isRecording) {
-      recognitionRef.current?.stop();
+      recognitionRef.current.stop();
       setIsRecording(false);
     } else {
       try {
-        recognitionRef.current?.start();
+        recognitionRef.current.start();
         setIsRecording(true);
       } catch (error) {
         toast({
           variant: 'destructive',
           title: 'Could Not Start Recording',
-          description: 'Please ensure your microphone is enabled and try again.',
+          description: 'Please ensure microphone permissions are enabled and try again.',
         });
         setIsRecording(false);
       }
@@ -214,7 +215,7 @@ export function InterviewSession({
                          {!isSpeechRecognitionSupported && (
                             <Alert variant="destructive">
                                 <AlertDescription>
-                                Speech recognition is not supported in your browser. Please
+                                Speech recognition is not supported in this browser. Please
                                 use a modern browser like Chrome for this feature.
                                 </AlertDescription>
                             </Alert>
