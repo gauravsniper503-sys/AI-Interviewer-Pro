@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Mic } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const formSchema = z.object({
   answer: z.string().min(10, {
@@ -101,6 +102,14 @@ export function InterviewSession({
                         <p className="text-lg font-semibold leading-relaxed text-foreground">
                         {question}
                         </p>
+
+                        <Alert className="text-sm text-muted-foreground">
+                            <Mic className="h-4 w-4" />
+                            <AlertDescription>
+                                Pro Tip: Use your keyboard&apos;s dictation feature (e.g., Windows Key + H) to speak your answer.
+                            </AlertDescription>
+                        </Alert>
+
                         <FormField
                         control={form.control}
                         name="answer"
