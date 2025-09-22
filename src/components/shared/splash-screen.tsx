@@ -38,7 +38,7 @@ export function SplashScreen() {
             <span className="text-4xl font-bold font-headline text-foreground">
               AI Interviewer
             </span>
-            <span className="text-xs text-right font-headline text-foreground/80 -mt-1">
+            <span className="text-xs text-right font-headline text-foreground -mt-1">
               Made by Gaurav
             </span>
           </div>
