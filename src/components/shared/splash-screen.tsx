@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Sparkles } from 'lucide-react';
+import { BrainCircuit } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export function SplashScreen() {
@@ -27,7 +27,7 @@ export function SplashScreen() {
                 duration: 1.0,
             }}
         >
-            <Sparkles className="h-16 w-16 text-primary" />
+            <BrainCircuit className="h-16 w-16 text-primary" />
         </motion.div>
         <motion.div
             initial={{ opacity: 0, y: 20 }}
