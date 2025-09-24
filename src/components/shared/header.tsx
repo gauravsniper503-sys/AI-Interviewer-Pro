@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -9,7 +10,7 @@ export function Header() {
       <div className="container flex h-14 items-center">
         <Link href="/" className="mr-6 flex items-center space-x-2">
           <Sparkles className="h-6 w-6 text-primary" />
-          <span className="hidden font-bold sm:inline-block font-headline">
+          <span className="font-bold font-headline">
             AI Interviewer
           </span>
         </Link>
